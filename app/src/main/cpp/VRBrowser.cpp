@@ -52,6 +52,14 @@ const char* kHaltActivity = "haltActivity";
 const char* kHaltActivitySignature = "(I)V";
 const char* kHandlePoorPerformance = "handlePoorPerformance";
 const char* kHandlePoorPerformanceSignature = "()V";
+const char* kSetExternalVRSurfaceLength = "setExternalVRSurfaceLength";
+const char* kSetExternalVRSurfaceLengthSignature = "(I)V";
+const char* kSetExternalVRSurfaceIndex = "setExternalVRSurfaceIndex";
+const char* kSetExternalVRSurfaceIndexSignature = "(I)V";
+const char* kSetExternalVRSurface = "setExternalVRSurface";
+const char* kSetExternalVRSurfaceSignature = "(ILandroid/view/Surface;)V";
+const char* kReleaseExternalSurfaces = "releaseExternalVRSurfaces";
+const char* kReleaseExternalSurfacesSignature = "()V";
 
 JNIEnv* sEnv = nullptr;
 jclass sBrowserClass = nullptr;
@@ -77,6 +85,10 @@ jmethodID sAreLayersEnabled = nullptr;
 jmethodID sSetDeviceType = nullptr;
 jmethodID sHaltActivity = nullptr;
 jmethodID sHandlePoorPerformance = nullptr;
+jmethodID sSetExternalVRSurfaceLength = nullptr;
+jmethodID sSetExternalVRSurfaceIndex = nullptr;
+jmethodID sSetExternalVRSurface = nullptr;
+jmethodID sReleaseExternalSurfaces = nullptr;
 }
 
 namespace crow {
@@ -117,6 +129,10 @@ VRBrowser::InitializeJava(JNIEnv* aEnv, jobject aActivity) {
   sSetDeviceType = FindJNIMethodID(sEnv, sBrowserClass, kSetDeviceType, kSetDeviceTypeSignature);
   sHaltActivity = FindJNIMethodID(sEnv, sBrowserClass, kHaltActivity, kHaltActivitySignature);
   sHandlePoorPerformance = FindJNIMethodID(sEnv, sBrowserClass, kHandlePoorPerformance, kHandlePoorPerformanceSignature);
+  sSetExternalVRSurface = FindJNIMethodID(sEnv, sBrowserClass, kSetExternalVRSurface, kSetExternalVRSurfaceSignature);
+  sSetExternalVRSurfaceLength = FindJNIMethodID(sEnv, sBrowserClass, kSetExternalVRSurfaceLength, kSetExternalVRSurfaceLengthSignature);
+  sSetExternalVRSurfaceIndex = FindJNIMethodID(sEnv, sBrowserClass, kSetExternalVRSurfaceIndex, kSetExternalVRSurfaceIndexSignature);
+  sReleaseExternalSurfaces = FindJNIMethodID(sEnv, sBrowserClass, kReleaseExternalSurfaces, kReleaseExternalSurfacesSignature);
 }
 
 void
@@ -151,6 +167,7 @@ VRBrowser::ShutdownJava() {
   sAreLayersEnabled = nullptr;
   sSetDeviceType = nullptr;
   sHaltActivity = nullptr;
+  sSetExternalVRSurface = nullptr;
   sEnv = nullptr;
 }
 
@@ -339,4 +356,31 @@ VRBrowser::HandlePoorPerformance() {
   CheckJNIException(sEnv, __FUNCTION__);
 }
 
+void
+VRBrowser::SetExternalVRSurfaceLength(jint aLen) {
+  if (!ValidateMethodID(sEnv, sActivity, sSetExternalVRSurfaceLength, __FUNCTION__)) { return; }
+  sEnv->CallVoidMethod(sActivity, sSetExternalVRSurfaceLength, aLen);
+  CheckJNIException(sEnv, __FUNCTION__);
+}
+
+void
+VRBrowser::SetExternalVRSurfaceId(jint aId) {
+  if (!ValidateMethodID(sEnv, sActivity, sSetExternalVRSurfaceIndex, __FUNCTION__)) { return; }
+  sEnv->CallVoidMethod(sActivity, sSetExternalVRSurfaceIndex, aId);
+  CheckJNIException(sEnv, __FUNCTION__);
+}
+
+void
+VRBrowser::SetExternalVRSurface(jint aIndex, jobject aSurface) {
+  if (!ValidateMethodID(sEnv, sActivity, sSetExternalVRSurface, __FUNCTION__)) { return; }
+  sEnv->CallVoidMethod(sActivity, sSetExternalVRSurface, aIndex, aSurface);
+  CheckJNIException(sEnv, __FUNCTION__);
+}
+
+void
+VRBrowser::ReleaseExternalVRSurfaces() {
+  if (!ValidateMethodID(sEnv, sActivity, sReleaseExternalSurfaces, __FUNCTION__)) { return; }
+  sEnv->CallVoidMethod(sActivity, sReleaseExternalSurfaces);
+  CheckJNIException(sEnv, __FUNCTION__);
+}
 } // namespace crow

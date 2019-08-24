@@ -629,6 +629,8 @@ const vrb::Vector kAverageHeight(0.0f, 1.7f, 0.0f);
 const vrb::Vector kAverageOculusHeight(0.0f, 1.65f, 0.0f);
 
 struct DeviceDelegateOculusVR::State {
+  const static uint32_t EXTERNAL_SURFACE_BUFFER_SIZE = 2;
+
   struct ControllerState {
     const int32_t index;
     const ElbowModel::HandEnum hand;
@@ -657,6 +659,7 @@ struct DeviceDelegateOculusVR::State {
   ovrJava java = {};
   ovrMobile* ovr = nullptr;
   OculusEyeSwapChainPtr eyeSwapChains[VRAPI_EYE_COUNT];
+  ovrTextureSwapChain* eyeSurfaceSwapChain[EXTERNAL_SURFACE_BUFFER_SIZE];
   OculusLayerCubePtr cubeLayer;
   OculusLayerEquirectPtr equirectLayer;
   std::vector<OculusLayerPtr> uiLayers;
@@ -718,6 +721,9 @@ struct DeviceDelegateOculusVR::State {
       VRB_LOG("Failed to initialize VrApi!. Error: %d", status);
       exit(status);
       return;
+    }
+    for (int i = 0; i < EXTERNAL_SURFACE_BUFFER_SIZE; ++i) {
+      eyeSurfaceSwapChain[i] = nullptr;
     }
     initialized = true;
     SetRenderSize(device::RenderMode::StandAlone);
@@ -1352,8 +1358,6 @@ DeviceDelegateOculusVR::StartFrame() {
   ovrMatrix4f matrix = vrapi_GetTransformFromPose(&m.predictedTracking.HeadPose.Pose);
   vrb::Matrix head = vrb::Matrix::FromRowMajor(matrix.M[0]);
 
-
-
   if (m.renderMode == device::RenderMode::StandAlone) {
     head.TranslateInPlace(kAverageHeight);
   }
@@ -1371,6 +1375,20 @@ DeviceDelegateOculusVR::StartFrame() {
       caps |= device::PositionEmulated;
     }
     m.immersiveDisplay->SetCapabilityFlags(caps);
+
+    uint32_t width, height;
+    m.GetImmersiveRenderSize(width, height);
+    for (int i = 0; i < DeviceDelegateOculusVR::State::EXTERNAL_SURFACE_BUFFER_SIZE; ++i) {
+      if (!m.eyeSurfaceSwapChain[i]) {
+        m.eyeSurfaceSwapChain[i] = vrapi_CreateAndroidSurfaceSwapChain(width, height);
+        auto surfaceOut = vrapi_GetTextureSwapChainAndroidSurface(m.eyeSurfaceSwapChain[i]);
+        surfaceOut = m.java.Env->NewGlobalRef(surfaceOut);
+        VRBrowser::SetExternalVRSurface(i, surfaceOut);
+        VRB_LOG("Creating AndroidSurface %d in DeviceDelegateOculusVR.", i);
+      }
+    }
+    VRBrowser::SetExternalVRSurfaceLength(State::EXTERNAL_SURFACE_BUFFER_SIZE);
+    VRBrowser::SetExternalVRSurfaceId(externalSurfaceId);
   }
 
   int lastReorientCount = m.reorientCount;
@@ -1470,13 +1488,33 @@ DeviceDelegateOculusVR::EndFrame(const bool aDiscard) {
   projection.HeadPose = m.predictedTracking.HeadPose;
   projection.Header.SrcBlend = VRAPI_FRAME_LAYER_BLEND_ONE;
   projection.Header.DstBlend = VRAPI_FRAME_LAYER_BLEND_ONE_MINUS_SRC_ALPHA;
-  for (int i = 0; i < VRAPI_FRAME_LAYER_EYE_MAX; ++i) {
-    const auto &eyeSwapChain = m.eyeSwapChains[i];
-    const int swapChainIndex = m.frameIndex % eyeSwapChain->swapChainLength;
-    // Set up OVR layer textures
-    projection.Textures[i].ColorSwapChain = eyeSwapChain->ovrSwapChain;
-    projection.Textures[i].SwapChainIndex = swapChainIndex;
-    projection.Textures[i].TexCoordsFromTanAngles = ovrMatrix4f_TanAngleMatrixFromProjection(&projectionMatrix);
+
+  if (!enableExternalSurfaceRender) {
+    for (int i = 0; i < VRAPI_FRAME_LAYER_EYE_MAX; ++i) {
+      const auto &eyeSwapChain = m.eyeSwapChains[i];
+      const int swapChainIndex = m.frameIndex % eyeSwapChain->swapChainLength;
+      // Set up OVR layer textures
+      projection.Textures[i].ColorSwapChain = eyeSwapChain->ovrSwapChain;
+      projection.Textures[i].SwapChainIndex = swapChainIndex;
+      projection.Textures[i].TexCoordsFromTanAngles = ovrMatrix4f_TanAngleMatrixFromProjection(&projectionMatrix);
+    }
+  } else {
+    const int swapChainIndex = externalSurfaceId;
+    ovrMatrix4f proj(projectionMatrix);
+    // Flip texCoord in vertical when using WebGL frame textures.
+    proj.M[1][1] *= -1;
+    proj = ovrMatrix4f_TanAngleMatrixFromProjection(&proj);
+
+    for (int i = 0; i < VRAPI_FRAME_LAYER_EYE_MAX; ++i) {
+      const auto eyeSwapChain = m.eyeSurfaceSwapChain[swapChainIndex];
+      // Set up OVR layer textures
+      projection.Textures[i].ColorSwapChain = eyeSwapChain;
+      projection.Textures[i].SwapChainIndex = 0;
+      projection.Textures[i].TexCoordsFromTanAngles = proj;
+    }
+
+    // Switch to the next surface.
+    externalSurfaceId = (++externalSurfaceId) % State::EXTERNAL_SURFACE_BUFFER_SIZE;
   }
   layers[layerCount++] = &projection.Header;
 
@@ -1504,6 +1542,11 @@ DeviceDelegateOculusVR::EndFrame(const bool aDiscard) {
   frameDesc.Layers = layers;
 
   vrapi_SubmitFrame2(m.ovr, &frameDesc);
+}
+
+void
+DeviceDelegateOculusVR::EnableExternalSurfaceRender(bool aEnable) {
+  enableExternalSurfaceRender = aEnable;
 }
 
 VRLayerQuadPtr
@@ -1689,6 +1732,13 @@ DeviceDelegateOculusVR::LeaveVR() {
   for (int i = 0; i < VRAPI_EYE_COUNT; ++i) {
     m.eyeSwapChains[i]->Destroy();
   }
+  for (int i = 0; i < DeviceDelegateOculusVR::State::EXTERNAL_SURFACE_BUFFER_SIZE; ++i) {
+    if (m.eyeSurfaceSwapChain[i]) {
+      vrapi_DestroyTextureSwapChain(m.eyeSurfaceSwapChain[i]);
+      m.eyeSurfaceSwapChain[i] = nullptr;
+      VRBrowser::ReleaseExternalVRSurfaces();
+    }
+  }
   if (m.cubeLayer) {
     m.cubeLayer->Destroy();
   }
@@ -1716,7 +1766,8 @@ DeviceDelegateOculusVR::ExitApp() {
   return true;
 }
 
-DeviceDelegateOculusVR::DeviceDelegateOculusVR(State &aState) : m(aState) {}
+DeviceDelegateOculusVR::DeviceDelegateOculusVR(State &aState) : m(aState),
+  externalSurfaceId(0), enableExternalSurfaceRender(false) {}
 
 DeviceDelegateOculusVR::~DeviceDelegateOculusVR() { m.Shutdown(); }
 

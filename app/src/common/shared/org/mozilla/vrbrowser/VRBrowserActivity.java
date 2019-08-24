@@ -951,6 +951,25 @@ public class VRBrowserActivity extends PlatformActivity implements WidgetManager
         });
     }
 
+    public void setExternalVRSurfaceLength(int aLen) {
+        GeckoVRManager.setExternalSurfaceLength(aLen);
+    }
+
+    public void setExternalVRSurfaceIndex(int aIndex) {
+        GeckoVRManager.setExternalSurfaceIndex(aIndex);
+    }
+
+    public void setExternalVRSurface(int aIndex, Surface aSurface) {
+        if (aSurface == null) {
+            Log.e(LOGTAG, "aSurface is null in setExternalVRSurface...");
+        }
+        GeckoVRManager.insertExternalSurface(aIndex, aSurface);
+    }
+
+    public void releaseExternalVRSurfaces() {
+        GeckoVRManager.releaseExternalSurfaces();
+    }
+
     void createOffscreenDisplay() {
         int[] ids = new int[1];
         GLES20.glGenTextures(1, ids, 0);
