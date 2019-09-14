@@ -10,6 +10,7 @@ import android.content.Context;
 import android.content.res.Configuration;
 
 import org.mozilla.vrbrowser.browser.Places;
+import org.mozilla.vrbrowser.telemetry.GleanMetricsService;
 import org.mozilla.vrbrowser.telemetry.TelemetryWrapper;
 import org.mozilla.vrbrowser.utils.LocaleUtils;
 
@@ -26,6 +27,7 @@ public class VRBrowserApplication extends Application {
         mPlaces = new Places(this);
 
         TelemetryWrapper.init(this);
+        GleanMetricsService.init(this);
     }
 
     @Override

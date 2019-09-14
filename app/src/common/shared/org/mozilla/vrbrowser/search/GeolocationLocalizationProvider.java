@@ -6,9 +6,11 @@ import org.mozilla.vrbrowser.geolocation.GeolocationData;
 
 import java.util.Locale;
 
+import kotlin.coroutines.Continuation;
+import mozilla.components.browser.search.provider.localization.SearchLocalization;
 import mozilla.components.browser.search.provider.localization.SearchLocalizationProvider;
 
-public class GeolocationLocalizationProvider extends SearchLocalizationProvider {
+public class GeolocationLocalizationProvider implements SearchLocalizationProvider {
 
     private String mCountry;
     private String mLanguage;
@@ -20,20 +22,21 @@ public class GeolocationLocalizationProvider extends SearchLocalizationProvider 
         mRegion = data.getCountryCode();
     }
 
+    public SearchLocalization determineRegion(Continuation<? super SearchLocalization> continuation) {
+        return new SearchLocalization(mLanguage, mCountry, mRegion);
+    }
+
     @NotNull
-    @Override
     public String getCountry() {
         return mCountry;
     }
 
     @NotNull
-    @Override
     public String getLanguage() {
         return mLanguage;
     }
 
     @Nullable
-    @Override
     public String getRegion() {
         return mRegion;
     }

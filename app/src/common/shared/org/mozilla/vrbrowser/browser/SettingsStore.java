@@ -11,6 +11,7 @@ import org.json.JSONException;
 import org.mozilla.geckoview.GeckoSessionSettings;
 import org.mozilla.telemetry.TelemetryHolder;
 import org.mozilla.vrbrowser.R;
+import org.mozilla.vrbrowser.telemetry.GleanMetricsService;
 import org.mozilla.vrbrowser.telemetry.TelemetryWrapper;
 import org.mozilla.vrbrowser.utils.DeviceType;
 import org.mozilla.vrbrowser.utils.LocaleUtils;
@@ -116,10 +117,20 @@ public class SettingsStore {
         final boolean hasEnabled = isTelemetryEnabled();
         if (hasEnabled != isEnabled) {
             TelemetryWrapper.init(mContext);
+
+            if (!GleanMetricsService.isInitialized()) {
+                GleanMetricsService.init(mContext);
+            }
         }
 
         TelemetryHolder.get().getConfiguration().setUploadEnabled(isEnabled);
         TelemetryHolder.get().getConfiguration().setCollectionEnabled(isEnabled);
+
+        if (isEnabled) {
+            GleanMetricsService.start();
+        } else {
+            GleanMetricsService.stop();
+        }
     }
 
     public void setGeolocationData(String aGeolocationData) {
