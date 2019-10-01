@@ -559,5 +559,6 @@ public class SettingsStore {
     public int getPid() {
         return mPrefs.getInt(mContext.getString(R.string.settings_key_pid), 0);
     }
+
 }
 

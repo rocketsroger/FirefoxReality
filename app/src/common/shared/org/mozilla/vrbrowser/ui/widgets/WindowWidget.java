@@ -158,12 +158,12 @@ public class WindowWidget extends UIWidget implements SessionChangeListener,
         mSessionStack.setHistoryDelegate(this);
         mSessionStack.newSession();
 
-        mBookmarksView  = new BookmarksView(aContext);
-        mBookmarksView.setBookmarksCallback(mBookmarksCallback);
+        mBookmarksView = new BookmarksView(aContext);
+        mBookmarksView.addBookmarksListener(mBookmarksListener);
         mBookmarksViewListeners = new ArrayList<>();
 
         mHistoryView = new HistoryView(aContext);
-        mHistoryView.setHistoryCallback(mHistoryCallback);
+        mHistoryView.addHistoryListener(mHistoryListener);
         mHistoryViewListeners = new ArrayList<>();
 
         mHandle = ((WidgetManagerDelegate)aContext).newWidgetHandle();
@@ -902,6 +902,8 @@ public class WindowWidget extends UIWidget implements SessionChangeListener,
             mTexture.release();
             mTexture = null;
         }
+        mBookmarksView.removeBookmarksListener(mBookmarksListener);
+        mHistoryView.removeHistoryListener(mHistoryListener);
         super.releaseWidget();
     }
 
@@ -1275,13 +1277,7 @@ public class WindowWidget extends UIWidget implements SessionChangeListener,
         mLibraryItemContextMenu.show(REQUEST_FOCUS);
     }
 
-    private BookmarksCallback mBookmarksCallback = new BookmarksCallback() {
-
-        @Override
-        public void onClearBookmarks(View view) {
-            // Not used ATM
-        }
-
+    private BookmarksCallback mBookmarksListener = new BookmarksCallback() {
         @Override
         public void onShowContextMenu(@NonNull View view, @NotNull BookmarkNode item, boolean isLastVisibleItem) {
             showLibraryItemContextMenu(
@@ -1294,7 +1290,7 @@ public class WindowWidget extends UIWidget implements SessionChangeListener,
         }
     };
 
-    private HistoryCallback mHistoryCallback = new HistoryCallback() {
+    private HistoryCallback mHistoryListener = new HistoryCallback() {
         @Override
         public void onClearHistory(@NonNull View view) {
             view.requestFocusFromTouch();

@@ -11,7 +11,6 @@ import android.content.res.Configuration;
 
 import org.mozilla.vrbrowser.browser.Places;
 import org.mozilla.vrbrowser.browser.Services;
-import org.mozilla.vrbrowser.db.AppDatabase;
 import org.mozilla.vrbrowser.telemetry.TelemetryWrapper;
 import org.mozilla.vrbrowser.utils.LocaleUtils;
 
@@ -42,14 +41,6 @@ public class VRBrowserApplication extends Application {
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
         LocaleUtils.setLocale(this);
-    }
-
-    public AppDatabase getDatabase() {
-        return AppDatabase.getInstance(this, mAppExecutors);
-    }
-
-    public DataRepository getRepository() {
-        return DataRepository.getInstance(getDatabase(), mAppExecutors);
     }
 
     public Services getServices() {

@@ -141,4 +141,5 @@ public class AnimationHelper {
             }
         }).setUpdateListener(animation -> aView.invalidate());
     }
+
 }
