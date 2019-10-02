@@ -366,7 +366,7 @@ public class TrayWidget extends UIWidget implements SessionChangeListener, Windo
         }
     }
 
-    private void toggleSettingsDialog() {
+    public void toggleSettingsDialog() {
         UIWidget widget = getChild(mSettingsDialogHandle);
         if (widget == null) {
             widget = createChild(SettingsWidget.class, false);

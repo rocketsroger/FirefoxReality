@@ -81,4 +81,5 @@ public interface WidgetManagerDelegate {
     void requestPermission(String uri, @NonNull String permission, GeckoSession.PermissionDelegate.Callback aCallback);
     void openNewWindow(@NonNull String uri);
     WindowWidget getFocusedWindow();
+    TrayWidget getTray();
 }
