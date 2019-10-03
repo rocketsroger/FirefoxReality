@@ -100,7 +100,7 @@ public class BookmarksView extends FrameLayout implements BookmarksStore.Bookmar
         mAccountManager.addAccountListener(mAccountListener);
         mAccountManager.addSyncListener(mSyncListener);
 
-        mIsSyncEnabled = mAccountManager.supportedSyncEngines().contains(SyncEngine.Bookmarks.INSTANCE);
+        mIsSyncEnabled = mAccountManager.getSyncEngineStatus(SyncEngine.Bookmarks.INSTANCE);
 
         updateCurrentAccountState();
 
@@ -214,22 +214,29 @@ public class BookmarksView extends FrameLayout implements BookmarksStore.Bookmar
     private SyncStatusObserver mSyncListener = new SyncStatusObserver() {
         @Override
         public void onStarted() {
-            mBinding.syncButton.setEnabled(false);
-            mSyncingAnimation.start();
+            if (mAccountManager.getSyncEngineStatus(SyncEngine.Bookmarks.INSTANCE)) {
+                mBinding.syncButton.setEnabled(false);
+                mSyncingAnimation.start();
+            }
         }
 
         @Override
         public void onIdle() {
-            mBinding.syncButton.setEnabled(true);
-            mSyncingAnimation.cancel();
+            mIsSyncEnabled = mAccountManager.getSyncEngineStatus(SyncEngine.Bookmarks.INSTANCE);
+            if (mIsSyncEnabled) {
+                mBinding.syncButton.setEnabled(true);
+                mSyncingAnimation.cancel();
+            }
             updateUi();
         }
 
         @Override
         public void onError(@Nullable Exception e) {
-            mBinding.syncButton.setEnabled(true);
-            mSyncingAnimation.cancel();
-            mBinding.syncDescription.setText(getContext().getString(R.string.fxa_account_last_no_synced));
+            if (mAccountManager.getSyncEngineStatus(SyncEngine.Bookmarks.INSTANCE)) {
+                mBinding.syncButton.setEnabled(true);
+                mSyncingAnimation.cancel();
+                mBinding.syncDescription.setText(getContext().getString(R.string.fxa_account_last_no_synced));
+            }
         }
     };
 
@@ -281,11 +288,8 @@ public class BookmarksView extends FrameLayout implements BookmarksStore.Bookmar
             mBinding.syncButton.setText(R.string.bookmarks_sync);
             mBinding.syncDescription.setVisibility(VISIBLE);
 
-            mIsSyncEnabled = mAccountManager.supportedSyncEngines().contains(SyncEngine.Bookmarks.INSTANCE);
             if (mIsSyncEnabled) {
                 mBinding.syncButton.setEnabled(true);
-                mBinding.syncDescription.setVisibility(VISIBLE);
-
                 long lastSync = mAccountManager.getLastSync();
                 if (lastSync == 0) {
                     mBinding.syncDescription.setText(getContext().getString(R.string.fxa_account_last_no_synced));
@@ -306,6 +310,7 @@ public class BookmarksView extends FrameLayout implements BookmarksStore.Bookmar
             }
 
         } else {
+            mBinding.syncButton.setEnabled(true);
             mBinding.syncButton.setText(R.string.fxa_account_sing_to_sync);
             mBinding.syncDescription.setVisibility(GONE);
         }
