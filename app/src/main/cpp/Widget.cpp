@@ -453,7 +453,7 @@ void
 Widget::SetPlacement(const WidgetPlacementPtr& aPlacement) {
   bool wasComposited = m.placement->composited;
   m.placement = aPlacement;
-  if (!wasComposited && aPlacement->composited && m.root) {
+  if (wasComposited != aPlacement->composited && m.root) {
     m.root->ToggleAll(m.toggleState);
     int32_t textureWidth, textureHeight;
     GetSurfaceTextureSize(textureWidth, textureHeight);
@@ -467,6 +467,7 @@ Widget::SetPlacement(const WidgetPlacementPtr& aPlacement) {
   if (layer) {
     layer->SetName(aPlacement->name);
     layer->SetClearColor(aPlacement->clearColor);
+    layer->SetComposited(aPlacement->composited);
   }
 }
 
