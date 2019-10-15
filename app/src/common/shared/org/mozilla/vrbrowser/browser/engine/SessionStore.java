@@ -18,7 +18,6 @@ import org.mozilla.vrbrowser.browser.HistoryStore;
 import org.mozilla.vrbrowser.browser.PermissionDelegate;
 import org.mozilla.vrbrowser.browser.SettingsStore;
 import org.mozilla.vrbrowser.crashreporting.CrashReporterService;
-import org.mozilla.vrbrowser.browser.AccountsManager;
 
 import java.util.HashMap;
 import java.util.List;
@@ -49,7 +48,6 @@ public class SessionStore implements GeckoSession.PermissionDelegate {
     private PermissionDelegate mPermissionDelegate;
     private BookmarksStore mBookmarksStore;
     private HistoryStore mHistoryStore;
-    private AccountsManager mAccountsManager;
 
     private SessionStore() {
         mSessionStacks = new HashMap<>();
@@ -107,10 +105,6 @@ public class SessionStore implements GeckoSession.PermissionDelegate {
         mHistoryStore = new HistoryStore(context);
     }
 
-    public void initializeAccounts(Context context) {
-        mAccountsManager = new AccountsManager(context);
-    }
-
     public SessionStack createSessionStack(int storeId, boolean privateMode) {
         SessionStack store = new SessionStack(mContext, mRuntime, privateMode);
         store.setPermissionDelegate(this);
@@ -157,10 +151,6 @@ public class SessionStore implements GeckoSession.PermissionDelegate {
         }
     }
 
-    public AccountsManager getAccountsManager() {
-        return mAccountsManager;
-    }
-
     public void onPause() {
         for (Map.Entry<Integer, SessionStack> entry : mSessionStacks.entrySet()) {
             entry.getValue().setActive(false);
@@ -185,11 +175,6 @@ public class SessionStore implements GeckoSession.PermissionDelegate {
 
         if (mHistoryStore != null) {
             mHistoryStore.removeAllListeners();
-        }
-
-        if (mAccountsManager != null) {
-            mAccountsManager.removeAllAccountListeners();
-            mAccountsManager.removeAllSyncListeners();
         }
     }
 

@@ -74,6 +74,8 @@ public class SettingsStore {
     private final static long CRASH_RESTART_DELTA = 2000;
     public final static boolean AUTOPLAY_ENABLED = false;
     public final static boolean DEBUG_LOGGING_DEFAULT = false;
+    public final static boolean BOOKMARKS_SYNC_DEFAULT = true;
+    public final static boolean HISTORY_SYNC_DEFAULT = true;
 
     // Enable telemetry by default (opt-out).
     public final static boolean CRASH_REPORTING_DEFAULT = false;
@@ -558,6 +560,26 @@ public class SettingsStore {
 
     public int getPid() {
         return mPrefs.getInt(mContext.getString(R.string.settings_key_pid), 0);
+    }
+
+    public void setBookmarksSyncEnabled(boolean isEnabled) {
+        SharedPreferences.Editor editor = mPrefs.edit();
+        editor.putBoolean(mContext.getString(R.string.settings_key_bookmarks_sync), isEnabled);
+        editor.commit();
+    }
+
+    public boolean isBookmarksSyncEnabled() {
+        return mPrefs.getBoolean(mContext.getString(R.string.settings_key_bookmarks_sync), BOOKMARKS_SYNC_DEFAULT);
+    }
+
+    public void setHistorySyncEnabled(boolean isEnabled) {
+        SharedPreferences.Editor editor = mPrefs.edit();
+        editor.putBoolean(mContext.getString(R.string.settings_key_history_sync), isEnabled);
+        editor.commit();
+    }
+
+    public boolean isHistorySyncEnabled() {
+        return mPrefs.getBoolean(mContext.getString(R.string.settings_key_history_sync), HISTORY_SYNC_DEFAULT);
     }
 
 }

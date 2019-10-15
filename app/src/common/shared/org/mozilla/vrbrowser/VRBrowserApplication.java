@@ -9,6 +9,7 @@ import android.app.Application;
 import android.content.Context;
 import android.content.res.Configuration;
 
+import org.mozilla.vrbrowser.browser.Accounts;
 import org.mozilla.vrbrowser.browser.Places;
 import org.mozilla.vrbrowser.browser.Services;
 import org.mozilla.vrbrowser.telemetry.TelemetryWrapper;
@@ -19,6 +20,7 @@ public class VRBrowserApplication extends Application {
     private AppExecutors mAppExecutors;
     private Services mServices;
     private Places mPlaces;
+    private Accounts mAccounts;
 
     @Override
     public void onCreate() {
@@ -27,6 +29,7 @@ public class VRBrowserApplication extends Application {
         mAppExecutors = new AppExecutors();
         mPlaces = new Places(this);
         mServices = new Services(this, mPlaces);
+        mAccounts = new Accounts(this);
 
         TelemetryWrapper.init(this);
     }
@@ -49,5 +52,9 @@ public class VRBrowserApplication extends Application {
 
     public Places getPlaces() {
         return mPlaces;
+    }
+
+    public Accounts getAccounts() {
+        return mAccounts;
     }
 }
